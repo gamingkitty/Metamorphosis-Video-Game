@@ -1,5 +1,6 @@
 import pygame
 import sys
+import text
 
 
 def scale_background_image(image, screen_size):
@@ -45,13 +46,12 @@ def main():
     text_box = pygame.image.load("./Images/Text Box.png")
     text_box = pygame.transform.scale(text_box, (current_background.get_width() - 500,
                                                  text_box.get_height() * ((current_background.get_width() - 500) / text_box.get_width())))
-    text_box_size = text_box.get_size()
+    test_text = text.Text("Hello this is a test let me test some more stuff now, like color, here I will do another color: \\c(255,0,12) this should be reddish now right, ok now lets turn back \\c(255,255,255) ok now lets try size: ok lets see if this worked lets test by going toa new line and seeing how it works lets go lmao I am not sure how this is going to work at all lololololol", text_box, ((screen_width - text_box.get_width()) / 2, effective_screen_size[1] - text_box.get_height() - 30))
 
     while True:
         screen.blit(bed_scene_image, (0, 0))
         delta_time = clock.tick(fps) / 1000
-        screen.blit(font.render("Hello, World!", True, white), (0, 0))
-        screen.blit(text_box, ((screen_width - text_box_size[0]) / 2, effective_screen_size[1] - text_box_size[1] - 30))
+        test_text.load(screen)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
