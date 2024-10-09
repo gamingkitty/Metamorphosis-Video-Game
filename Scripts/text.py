@@ -16,7 +16,7 @@ def wrap_text(text, max_width):
     special_char_length = 0
 
     for word in words:
-        if word[:2] == "\\c" or word[:2] == "\\p":
+        if word[:2] == "\\c" or word[:2] == "\\p" or word[:2] == "\\r":
             current_line = current_line + word + " "
             special_char_length += default_font.size(word + " ")[0]
         else:
@@ -51,7 +51,7 @@ class Text:
         self.reveal_cooldown = 0.03
         self.reveal_timer = 0
 
-        self.sound_cooldown = 0.125
+        self.sound_cooldown = 0.12
         self.sound_timer = 0
 
         self.current_line = 0
@@ -59,6 +59,17 @@ class Text:
         self.current_char = 0
 
         self.current_color = (255, 255, 255)
+
+        special_char_check = self.lines[0][0]
+
+        while special_char_check[:2] == "\\c" or special_char_check[:2] == "\\p" or special_char_check[:2] == "\\r":
+            self.handle_special_char(special_char_check)
+            self.current_char = 0
+            self.current_word += 1
+            if not self.is_done():
+                special_char_check = self.get_current_word()
+            else:
+                break
 
     def load(self, screen):
         screen.blit(self.text_box, self.text_box_position)
@@ -88,16 +99,11 @@ class Text:
                 is_new_line = True
 
             if self.is_done():
-                return
+                return False
 
             new_word_text = self.get_current_word()
-            if new_word_text[:2] == "\\c" or new_word_text[:2] == "\\p":
-                if new_word_text[:2] == "\\c":
-                    rgb = new_word_text[3:len(new_word_text) - 1].split(",")
-                    self.current_color = (int(rgb[0]), int(rgb[1]), int(rgb[2][:-1]))
-                else:
-                    time = int(new_word_text[2:len(new_word_text)]) / 1000
-                    self.reveal_timer -= time
+            while new_word_text[:2] == "\\c" or new_word_text[:2] == "\\p" or new_word_text[:2] == "\\r":
+                self.handle_special_char(new_word_text)
 
                 self.current_char = 0
                 self.current_word += 1
@@ -105,6 +111,11 @@ class Text:
                     self.current_word = 0
                     self.current_line += 1
                     is_new_line = True
+
+                if not self.is_done():
+                    new_word_text = self.get_current_word()
+                else:
+                    break
 
         return is_new_line
 
@@ -134,6 +145,19 @@ class Text:
         while not self.is_done():
             self.render_next_char()
 
+    def handle_special_char(self, special_char):
+        if special_char[:2] == "\\c":
+            rgb = special_char[3:len(special_char)].split(",")
+            rgb[2] = rgb[2].rstrip(" ")
+            self.current_color = (int(rgb[0]), int(rgb[1]), int(rgb[2][:-1]))
+        elif special_char[:2] == "\\p":
+            time = int(special_char[2:len(special_char)]) / 1000
+            self.reveal_timer -= time
+        else:
+            new_cooldown = int(special_char[2:len(special_char)]) / 1000
+            self.reveal_cooldown = new_cooldown
+            self.sound_cooldown = new_cooldown * 4
+
     def set_text(self, text):
         self.current_line = 0
         self.current_word = 0
@@ -145,7 +169,22 @@ class Text:
         self.text_surface.fill((0, 0, 0))
 
         self.reveal_timer = 0
+        self.reveal_cooldown = 0.03
+
+        self.sound_cooldown = 0.12
+        self.sound_timer = 0
 
         self.lines = [[word + " " for word in line.split()] for line in wrap_text(text, self.text_box.get_width() - 60)]
         for line in self.lines:
             line[-1] = line[-1][:-1]
+
+        special_char_check = self.lines[0][0]
+
+        while special_char_check[:2] == "\\c" or special_char_check[:2] == "\\p" or special_char_check[:2] == "\\r":
+            self.handle_special_char(special_char_check)
+            self.current_char = 0
+            self.current_word += 1
+            if not self.is_done():
+                special_char_check = self.get_current_word()
+            else:
+                break

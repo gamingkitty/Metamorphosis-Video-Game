@@ -18,6 +18,14 @@ def scale_background_image(image, screen_size):
     return background_surface
 
 
+def set_scene(scene_obj, scene_parameters, options):
+    options_in_scene = []
+    for i in range(len(scene_parameters[1])):
+        options[i].set_text(scene_parameters[1][i][0])
+        options_in_scene.append(options[i])
+    scene_obj.reset(scene_parameters[0], scene_parameters[2], options_in_scene)
+
+
 def main():
     pygame.init()
     pygame.event.set_allowed([pygame.KEYDOWN, pygame.QUIT, pygame.KEYUP, pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP])
@@ -50,10 +58,10 @@ def main():
 
     effective_screen_size = bed_scene_image.get_size()
 
-    text_box = pygame.image.load("./Images/Text/Text Box.png")
-    text_box = pygame.transform.scale(text_box, (bed_scene_image.get_width() - 300,
-                                                 text_box.get_height() * ((bed_scene_image.get_width() - 600) / text_box.get_width())))
-    text_box = text.Text("Hello this is a test let me \\p1000 test some more stuff now, like color, here I will do another color: \\c(255,0,12) this should be reddish now right, ok now lets turn back \\c(255,255,255) ok now lets try size: ok lets see if this worked lets test by going toa new line and seeing how it works lets go lmao I am not sure how this is going to work at all lololololol", text_box, ((screen_width - text_box.get_width()) / 2, effective_screen_size[1] - text_box.get_height() - 30))
+    text_box_img = pygame.image.load("./Images/Text/Text Box.png")
+    text_box_img = pygame.transform.scale(text_box_img, (bed_scene_image.get_width() - 300,
+                                                 text_box_img.get_height() * ((bed_scene_image.get_width() - 600) / text_box_img.get_width())))
+    text_box = text.Text("text", text_box_img, ((screen_width - text_box_img.get_width()) / 2, effective_screen_size[1] - text_box_img.get_height() - 30))
 
     option_background = pygame.image.load("./Images/Text/Option Background.png")
     option_background = pygame.transform.scale(option_background, (option_background.get_width() * 2, option_background.get_height() * 2))
@@ -71,10 +79,88 @@ def main():
     background_noise = pygame.mixer.Sound("./Sound/Background Noise.mp3")
     background_noise.set_volume(0.05)
 
-    texts_opt_1 = ["u chose option 1", "Ok now go back to the start"]
-    texts_opt_2 = ["u chose option 2", "Ok now you have to choose option 1"]
+    # How to format a scene, [texts], [(option 1 text, scene it goes to, cutscene to trigger), (option 2 text, scene it goes to, cutscene to trigger)], background_img
+    # scenes = [
+    #     [["\\r50 Oh can't I sleep a little longer? \\p1000 I wish I could just forget my job and sleep through this dreary weather.", "\\r50 But I must wake up to make my train, \\p500 after all I can't be late \\p500 . \\p500 . \\p500 . \\p1500 \\r30 Oh God, Its 6:00 already!", "Is my alarm clock broken? What am I supposed to say to the chief clerk?", "Surely he can't fire me for one slip up can he?"], [("Get out of bed", 0, None), ("Stay in bed", 0, None)], bed_scene_image]
+    # ]
+    scenes = [
+        [["\\r50 What is happening to me? \\p1000 My body, it feels strange, \\p500 heavy, \\p500 \\r30 monstrous.",
+          "\\r50 I can barely move my legs, \\p1000 but they aren't legs anymore, \\c(200,0,0) are they?",
+          "\\r50 Something's crawling beneath my skin, \\p500 twisting, \\p500 mutating \\p1000 . \\p500 . \\p500 .",
+          "\\r30 \\c(200,0,0) Oh no, \\p500 I can see them \\p1000 \\r50 my hands \\p1000 they've become \\p1000 claws!",
+          "The room is spinning, but \\r30 I must stay calm. \\p500 No one can know \\p1000 what I've turned into."],
+         [("Look into the mirror", 1, None), ("Hide under the bed", 2, None)], bed_scene_image],
 
-    current_scene = scene.Scene(["Text 1 blah blah blah more blah pause \\p1000 blah blah", "text 2 hi hello how are you", "text 3 hola, hablas espanol?", "which option would you like to choose?"], text_box, bed_scene_image, options)
+        [["\\r50 \\c(255,255,255) \\p500 Slowly, you turn toward the mirror.",
+          "\\p1000 Your reflection— \\r30 \\c(200,0,0) it isn't human \\p500 anymore.",
+          "The thing staring back at you \\r50 has too many legs, \\p500 too many eyes.",
+          "\\r30 Your face... \\p500 Where is your face?",
+          "\\r50 \\p500 It’s replaced by a writhing \\c(200,0,0) mass of insects.",
+          "Your mind screams, but no sound leaves your body."],
+         [("Shatter the mirror", 3, None), ("Turn away", 4, None)], bed_scene_image],
+
+        [["\\r50 \\c(200,0,0) You crawl beneath the bed.",
+          "\\r50 The shadows envelop you, and \\p500 you hear something \\r30 breathing beside you.",
+          "\\r50 It sounds like \\p500 \\c(255,255,255) it's coming \\p500 from inside your own head.",
+          "\\p1000 Is there something there \\r30 waiting \\p500 for you in the dark?",
+          "\\r50 \\p500 Or \\p500 is it \\r30 you? \\c(200,0,0)"],
+         [("Stay hidden", 5, None), ("Emerge slowly", 6, None)], bed_scene_image],
+
+        [["\\r50 \\c(255,0,0) The glass shatters \\p1000 into thousands of pieces.",
+          "\\r50 Your reflection splinters into every shard, \\p1000 each twisted version of you \\r30 screaming silently.",
+          "But they all show one thing: \\p500 \\c(255,0,0) your monstrous truth.",
+          "This can’t be real, \\p500 you tell yourself.",
+          "\\p1000 But it is."],
+         [("Run from the room", 7, None), ("Collapse in shock", 8, None)], bed_scene_image],
+
+        [["\\r50 You turn away from the mirror \\p1000 as if denying what you saw \\p500 could make it untrue.",
+          "\\r30 But you know it's there, \\p1000 lurking behind your reflection.",
+          "\\r50 And worse, \\p500 you know it’s also inside you."],
+         [("Run from the room", 7, None), ("Hide under the bed", 2, None)], bed_scene_image],
+
+        [["\\r50 You stay perfectly still under the bed.",
+          "Your breathing slows, \\p500 matching the low growling \\p500 just inches away from your face.",
+          "\\r30 Whatever it is, \\p500 it's close \\p500 and it knows you're here."],
+         [("Remain silent", 5, None), ("Crawl out", 6, None)], bed_scene_image],
+
+        [["\\r50 \\c(255,255,255) Slowly, you crawl out from under the bed.",
+          "\\p1000 The room is unnaturally quiet, \\p500 the air heavy with a presence you can’t explain.",
+          "\\r30 Suddenly, \\p500 a soft clicking noise starts \\p500 behind you.",
+          "\\r50 You turn to see \\p500 \\c(200,0,0) it’s coming closer."],
+         [("Run", 7, None), ("Confront it", 9, None)], bed_scene_image],
+
+        [["\\r50 You burst out of the room, \\p1000 your twisted body barely fitting through the doorframe.",
+          "\\p500 The walls seem to pulse as you run, \\p500 as though they too are \\c(255,0,0) alive.",
+          "\\r30 But where are you running to? \\p1000 There’s no escape from this... from yourself."],
+         [("Keep running", 10, None), ("Collapse", 8, None)], bed_scene_image],
+
+        [["\\r50 \\p1000 You collapse to the floor, \\p500 your body twitching violently.",
+          "\\r30 The room spins, \\p500 your mind unravels.",
+          "\\r50 What have you become?"],
+         [("Surrender", 11, None)], bed_scene_image],
+
+        [["\\r50 \\c(255,0,0) You stand your ground.",
+          "The thing crawling toward you from the darkness is \\r30 unspeakable, \\p500 all limbs and eyes and teeth.",
+          "\\r50 But as it approaches, \\p1000 you feel a connection.",
+          "\\r30 This is you."],
+         [("Accept it", 12, None), ("Fight it", 12, None)], bed_scene_image],
+
+        [["\\r50 You keep running, \\p1000 but the corridors twist \\p500 and turn endlessly.",
+          "\\r30 You’ll never outrun \\p500 what's inside you."],
+         [("Surrender", 11, None)], bed_scene_image],
+
+        [["\\r50 \\p1000 You surrender to the transformation, \\p500 letting it consume you.",
+          "\\r30 The pain vanishes, \\p500 and you feel nothing \\p1000 at all."],
+         [("End", 0, "end")], bed_scene_image],
+
+        [["\\r50 You fight the creature, \\p1000 but your limbs are weak \\p500 and uncoordinated.",
+          "\\r30 You can’t win \\p1000 against \\p500 \\c(200,0,0) yourself."],
+         [("Surrender", 11, None)], bed_scene_image]
+    ]
+
+    option_1.set_text(scenes[0][1][0][0])
+    option_2.set_text(scenes[0][1][1][0])
+    current_scene = scene.Scene(scenes[0][0], text_box, scenes[0][2], options)
     scene_num = 0
     while True:
         delta_time = clock.tick(fps) / 1000
@@ -111,6 +197,13 @@ def main():
                     cutscene_start_time = None
                     bed_scene_image.blit(brightness_screen, (0, 0))
                     background_noise.play(-1)
+            elif current_cutscene == "end":
+                brightness_screen.set_alpha(min(50 * cutscene_time, 255))
+                current_scene.load(screen)
+                screen.blit(brightness_screen, (0, 0))
+                if cutscene_time > 8:
+                    pygame.quit()
+                    sys.exit()
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -123,26 +216,13 @@ def main():
         current_scene.load(screen)
         current_scene.move(delta_time)
 
-        if scene_num == 0 and current_scene.get_chosen_option() == option_1:
-            option_1.set_text("Go back to start")
-            option_2.set_text("Go back to start")
-            current_scene.reset(texts_opt_1, bed_scene_image, options)
-            scene_num = 1
-        elif scene_num == 0 and current_scene.get_chosen_option() == option_2:
-            option_1.set_text("Go to option 1")
-            option_2.set_text("Go to option 1")
-            current_scene.reset(texts_opt_2, bed_scene_image, options)
-            scene_num = 2
-        elif scene_num == 2 and current_scene.get_chosen_option() is not None:
-            option_1.set_text("Go back to start")
-            option_2.set_text("Go back to start")
-            current_scene.reset(texts_opt_1, bed_scene_image, options)
-            scene_num = 1
-        elif scene_num == 1 and current_scene.get_chosen_option() is not None:
-            option_1.set_text("Option 1")
-            option_2.set_text("Option 2")
-            current_scene = scene.Scene(["Text 1 blah blah blah more blah pause \\p1000 blah blah", "text 2 hi hello how are you", "text 3 hola, hablas espanol?", "which option would you like to choose?"], text_box, bed_scene_image, options)
-            scene_num = 0
+        for i in range(len(current_scene.options)):
+            if current_scene.get_chosen_option() == current_scene.options[i]:
+                chosen_option_parameters = scenes[scene_num][1][i]
+                set_scene(current_scene, scenes[chosen_option_parameters[1]], options)
+                current_cutscene = chosen_option_parameters[2]
+                scene_num = chosen_option_parameters[1]
+                break
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
