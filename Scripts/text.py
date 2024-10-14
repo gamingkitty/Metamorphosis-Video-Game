@@ -4,8 +4,12 @@ pygame.font.init()
 pygame.mixer.init()
 
 default_font = pygame.font.SysFont("calibri", 36)
+italic_default_font = pygame.font.SysFont("calibri", 36, italic=True)
 talk_sound = pygame.mixer.Sound("./Sound/Talk Noise.mp3")
 talk_sound.set_volume(0.4)
+
+other_talk_sound = pygame.mixer.Sound("./Sound/Other Talk Noise.mp3")
+other_talk_sound.set_volume(0.4)
 
 
 def wrap_text(text, max_width):
@@ -16,7 +20,7 @@ def wrap_text(text, max_width):
     special_char_length = 0
 
     for word in words:
-        if word[:2] == "\\c" or word[:2] == "\\p" or word[:2] == "\\r":
+        if word[:2] == "\\c" or word[:2] == "\\p" or word[:2] == "\\r" or word[:2] == "\\i" or word[:2] == "\\o":
             current_line = current_line + word + " "
             special_char_length += default_font.size(word + " ")[0]
         else:
@@ -52,17 +56,19 @@ class Text:
         self.reveal_timer = 0
 
         self.sound_cooldown = 0.12
-        self.sound_timer = 0
+        self.sound_timer = 0.12
+        self.is_other_sound = False
 
         self.current_line = 0
         self.current_word = 0
         self.current_char = 0
 
         self.current_color = (255, 255, 255)
+        self.is_italic = False
 
         special_char_check = self.lines[0][0]
 
-        while special_char_check[:2] == "\\c" or special_char_check[:2] == "\\p" or special_char_check[:2] == "\\r":
+        while special_char_check[:2] == "\\c" or special_char_check[:2] == "\\p" or special_char_check[:2] == "\\r" or special_char_check[:2] == "\\i" or special_char_check[:2] == "\\o":
             self.handle_special_char(special_char_check)
             self.current_char = 0
             self.current_word += 1
@@ -102,7 +108,7 @@ class Text:
                 return False
 
             new_word_text = self.get_current_word()
-            while new_word_text[:2] == "\\c" or new_word_text[:2] == "\\p" or new_word_text[:2] == "\\r":
+            while new_word_text[:2] == "\\c" or new_word_text[:2] == "\\p" or new_word_text[:2] == "\\r" or new_word_text[:2] == "\\i" or new_word_text[:2] == "\\o":
                 self.handle_special_char(new_word_text)
 
                 self.current_char = 0
@@ -120,7 +126,11 @@ class Text:
         return is_new_line
 
     def render_next_char(self):
-        rendered_char = default_font.render(self.get_current_char(), True, self.current_color)
+        rendered_char = None
+        if self.is_italic:
+            rendered_char = italic_default_font.render(self.get_current_char(), True, self.current_color)
+        else:
+            rendered_char = default_font.render(self.get_current_char(), True, self.current_color)
         self.text_surface.blit(rendered_char, self.char_blit_position)
         if self.increment_char():
             self.char_blit_position = (0, self.char_blit_position[1] + rendered_char.get_height())
@@ -135,11 +145,15 @@ class Text:
 
                 self.render_next_char()
 
-            if self.reveal_timer >= 0:
-                self.sound_timer += delta_time
-                if self.sound_timer >= self.sound_cooldown:
-                    self.sound_timer -= self.sound_cooldown
+            self.sound_timer += delta_time
+            if self.reveal_timer < 0:
+                self.sound_timer = min(self.sound_timer, self.sound_cooldown)
+            if self.reveal_timer >= 0 and self.sound_timer >= self.sound_cooldown:
+                self.sound_timer -= self.sound_cooldown
+                if not self.is_other_sound:
                     talk_sound.play()
+                else:
+                    other_talk_sound.play()
 
     def skip(self):
         while not self.is_done():
@@ -153,10 +167,14 @@ class Text:
         elif special_char[:2] == "\\p":
             time = int(special_char[2:len(special_char)]) / 1000
             self.reveal_timer -= time
-        else:
+        elif special_char[:2] == "\\r":
             new_cooldown = int(special_char[2:len(special_char)]) / 1000
             self.reveal_cooldown = new_cooldown
             self.sound_cooldown = new_cooldown * 4
+        elif special_char[:2] == "\\i":
+            self.is_italic = not self.is_italic
+        else:
+            self.is_other_sound = not self.is_other_sound
 
     def set_text(self, text):
         self.current_line = 0
@@ -172,7 +190,10 @@ class Text:
         self.reveal_cooldown = 0.03
 
         self.sound_cooldown = 0.12
-        self.sound_timer = 0
+        self.sound_timer = 0.12
+        self.is_other_sound = False
+
+        self.is_italic = False
 
         self.lines = [[word + " " for word in line.split()] for line in wrap_text(text, self.text_box.get_width() - 60)]
         for line in self.lines:
@@ -180,7 +201,7 @@ class Text:
 
         special_char_check = self.lines[0][0]
 
-        while special_char_check[:2] == "\\c" or special_char_check[:2] == "\\p" or special_char_check[:2] == "\\r":
+        while special_char_check[:2] == "\\c" or special_char_check[:2] == "\\p" or special_char_check[:2] == "\\r" or special_char_check[:2] == "\\i" or special_char_check[:2] == "\\o":
             self.handle_special_char(special_char_check)
             self.current_char = 0
             self.current_word += 1

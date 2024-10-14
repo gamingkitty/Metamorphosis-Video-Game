@@ -51,7 +51,7 @@ class Scene:
                     self.option_click_cooldown = 0.5
 
     def at_decision(self):
-        return self.current_text >= len(self.texts) - 1
+        return self.current_text >= len(self.texts) - 1 and self.text_box.is_done()
 
     def get_current_text(self):
         return self.texts[self.current_text]

@@ -49,6 +49,7 @@ def main():
     gray = (40, 40, 40)
 
     bed_scene_image = scale_background_image(pygame.image.load("./Images/Scenes/Bed Scene.png"), screen_size)
+    door_scene_image = scale_background_image(pygame.image.load("./Images/Scenes/Door Scene.png"), screen_size)
 
     clock_image = pygame.image.load("./Images/Scenes/Clock.png")
     clock_position = ((screen_width - clock_image.get_width()) / 2, (screen_height - clock_image.get_height()) / 2)
@@ -62,6 +63,8 @@ def main():
     text_box_img = pygame.transform.scale(text_box_img, (bed_scene_image.get_width() - 300,
                                                  text_box_img.get_height() * ((bed_scene_image.get_width() - 600) / text_box_img.get_width())))
     text_box = text.Text("text", text_box_img, ((screen_width - text_box_img.get_width()) / 2, effective_screen_size[1] - text_box_img.get_height() - 30))
+    cutscene_text_box = text.Text("text", text_box_img, ((screen_width - text_box_img.get_width()) / 2, effective_screen_size[1] - text_box_img.get_height() - 30))
+    set_text = False
 
     option_background = pygame.image.load("./Images/Text/Option Background.png")
     option_background = pygame.transform.scale(option_background, (option_background.get_width() * 2, option_background.get_height() * 2))
@@ -79,183 +82,159 @@ def main():
     background_noise = pygame.mixer.Sound("./Sound/Background Noise.mp3")
     background_noise.set_volume(0.05)
 
+    hurt_sound = pygame.mixer.Sound("./Sound/Hurt.mp3")
+    hurt_sound.set_volume(0.5)
+    hurt_played = False
+
+    door_bell_sound = pygame.mixer.Sound("./Sound/Door Bell.mp3")
+    door_bell_played = False
+
+    glitch_overlay = pygame.transform.scale(pygame.image.load("./Images/Effects/Glitch.png"), effective_screen_size)
+    overlay_location = ((screen_size[0] - effective_screen_size[0]) / 2, (screen_size[1] - effective_screen_size[1]) / 2)
+    glitched = False
+
+    glitch_sound = pygame.mixer.Sound("./Sound/Glitch.mp3")
+    glitch_played = False
+
+    hurt_overlay = pygame.Surface(effective_screen_size)
+    hurt_overlay.fill((100, 20, 20))
+
+    hurt_times = 1
+    set_hurt_times = False
+
+    fall_sound = pygame.mixer.Sound("./Sound/Fall.mp3")
+    fall_sound_played = False
+
+    scurry_sound = pygame.mixer.Sound("./Sound/Scurry.mp3")
+    scurry_sound_played = False
+
+    door_open_sound = pygame.mixer.Sound("./Sound/Door Open.mp3")
+    door_open_played = False
+
+    door_slam_sound = pygame.mixer.Sound("./Sound/Door Slam.mp3")
+    door_slam_played = False
+
     # How to format a scene, [texts], [(option 1 text, scene it goes to, cutscene to trigger), (option 2 text, scene it goes to, cutscene to trigger)], background_img
-    # scenes = [
-    #     [["\\r50 Oh can't I sleep a little longer? \\p1000 I wish I could just forget my job and sleep through this dreary weather.", "\\r50 But I must wake up to make my train, \\p500 after all I can't be late \\p500 . \\p500 . \\p500 . \\p1500 \\r30 Oh God, Its 6:00 already!", "Is my alarm clock broken? What am I supposed to say to the chief clerk?", "Surely he can't fire me for one slip up can he?"], [("Get out of bed", 0, None), ("Stay in bed", 0, None)], bed_scene_image]
-    # ]
-    # scenes = [
-    #     [["\\r50 What is happening to me? \\p1000 My body, it feels strange, \\p500 heavy, \\p500 \\r30 monstrous.",
-    #       "\\r50 I can barely move my legs, \\p1000 but they aren't legs anymore, \\c(200,0,0) are they?",
-    #       "\\r50 Something's crawling beneath my skin, \\p500 twisting, \\p500 mutating \\p1000 . \\p500 . \\p500 .",
-    #       "\\r30 \\c(200,0,0) Oh no, \\p500 I can see them \\p1000 \\r50 my hands \\p1000 they've become \\p1000 claws!",
-    #       "The room is spinning, but \\r30 I must stay calm. \\p500 No one can know \\p1000 what I've turned into."],
-    #      [("Look into the mirror", 1, None), ("Hide under the bed", 2, None)], bed_scene_image],
-    #
-    #     [["\\r50 \\c(255,255,255) \\p500 Slowly, you turn toward the mirror.",
-    #       "\\p1000 Your reflection— \\r30 \\c(200,0,0) it isn't human \\p500 anymore.",
-    #       "The thing staring back at you \\r50 has too many legs, \\p500 too many eyes.",
-    #       "\\r30 Your face... \\p500 Where is your face?",
-    #       "\\r50 \\p500 It’s replaced by a writhing \\c(200,0,0) mass of insects.",
-    #       "Your mind screams, but no sound leaves your body."],
-    #      [("Shatter the mirror", 3, None), ("Turn away", 4, None)], bed_scene_image],
-    #
-    #     [["\\r50 \\c(200,0,0) You crawl beneath the bed.",
-    #       "\\r50 The shadows envelop you, and \\p500 you hear something \\r30 breathing beside you.",
-    #       "\\r50 It sounds like \\p500 \\c(255,255,255) it's coming \\p500 from inside your own head.",
-    #       "\\p1000 Is there something there \\r30 waiting \\p500 for you in the dark?",
-    #       "\\r50 \\p500 Or \\p500 is it \\r30 you? \\c(200,0,0)"],
-    #      [("Stay hidden", 5, None), ("Emerge slowly", 6, None)], bed_scene_image],
-    #
-    #     [["\\r50 \\c(255,0,0) The glass shatters \\p1000 into thousands of pieces.",
-    #       "\\r50 Your reflection splinters into every shard, \\p1000 each twisted version of you \\r30 screaming silently.",
-    #       "But they all show one thing: \\p500 \\c(255,0,0) your monstrous truth.",
-    #       "This can’t be real, \\p500 you tell yourself.",
-    #       "\\p1000 But it is."],
-    #      [("Run from the room", 7, None), ("Collapse in shock", 8, None)], bed_scene_image],
-    #
-    #     [["\\r50 You turn away from the mirror \\p1000 as if denying what you saw \\p500 could make it untrue.",
-    #       "\\r30 But you know it's there, \\p1000 lurking behind your reflection.",
-    #       "\\r50 And worse, \\p500 you know it’s also inside you."],
-    #      [("Run from the room", 7, None), ("Hide under the bed", 2, None)], bed_scene_image],
-    #
-    #     [["\\r50 You stay perfectly still under the bed.",
-    #       "Your breathing slows, \\p500 matching the low growling \\p500 just inches away from your face.",
-    #       "\\r30 Whatever it is, \\p500 it's close \\p500 and it knows you're here."],
-    #      [("Remain silent", 5, None), ("Crawl out", 6, None)], bed_scene_image],
-    #
-    #     [["\\r50 \\c(255,255,255) Slowly, you crawl out from under the bed.",
-    #       "\\p1000 The room is unnaturally quiet, \\p500 the air heavy with a presence you can’t explain.",
-    #       "\\r30 Suddenly, \\p500 a soft clicking noise starts \\p500 behind you.",
-    #       "\\r50 You turn to see \\p500 \\c(200,0,0) it’s coming closer."],
-    #      [("Run", 7, None), ("Confront it", 9, None)], bed_scene_image],
-    #
-    #     [["\\r50 You burst out of the room, \\p1000 your twisted body barely fitting through the doorframe.",
-    #       "\\p500 The walls seem to pulse as you run, \\p500 as though they too are \\c(255,0,0) alive.",
-    #       "\\r30 But where are you running to? \\p1000 There’s no escape from this... from yourself."],
-    #      [("Keep running", 10, None), ("Collapse", 8, None)], bed_scene_image],
-    #
-    #     [["\\r50 \\p1000 You collapse to the floor, \\p500 your body twitching violently.",
-    #       "\\r30 The room spins, \\p500 your mind unravels.",
-    #       "\\r50 What have you become?"],
-    #      [("Surrender", 11, None)], bed_scene_image],
-    #
-    #     [["\\r50 \\c(255,0,0) You stand your ground.",
-    #       "The thing crawling toward you from the darkness is \\r30 unspeakable, \\p500 all limbs and eyes and teeth.",
-    #       "\\r50 But as it approaches, \\p1000 you feel a connection.",
-    #       "\\r30 This is you."],
-    #      [("Accept it", 12, None), ("Fight it", 12, None)], bed_scene_image],
-    #
-    #     [["\\r50 You keep running, \\p1000 but the corridors twist \\p500 and turn endlessly.",
-    #       "\\r30 You’ll never outrun \\p500 what's inside you."],
-    #      [("Surrender", 11, None)], bed_scene_image],
-    #
-    #     [["\\r50 \\p1000 You surrender to the transformation, \\p500 letting it consume you.",
-    #       "\\r30 The pain vanishes, \\p500 and you feel nothing \\p1000 at all."],
-    #      [("End", 0, "end")], bed_scene_image],
-    #
-    #     [["\\r50 You fight the creature, \\p1000 but your limbs are weak \\p500 and uncoordinated.",
-    #       "\\r30 You can’t win \\p1000 against \\p500 \\c(200,0,0) yourself."],
-    #      [("Surrender", 11, None)], bed_scene_image]
-    # ]
-
     scenes = [
-        [["\\r50 It's so early... \\p500 and yet my body feels \\r30 so heavy.",
-          "\\r50 I can't move like I used to, \\p500 but that doesn't matter.",
-          "\\r30 What matters is I'm late. \\p500 I'm \\c(255,0,0) so late for work.",
-          "I can’t let my family down, \\p1000 \\c(255,255,255) not again. \\p1000 They need me."],
-         [("Get out of bed", 1, None), ("Stay in bed", 2, None)], bed_scene_image],
-
-        [["\\r50 \\p1000 With great effort, you swing \\r30 one leg \\p1000 out of bed.",
-          "But \\p500 \\r30 it's not a leg. \\r50 It's \\p500 something else. \\c(255,0,0)",
-          "\\r50 Does it even matter? \\p1000 You must get to work.",
-          "\\r30 Your family is counting on you."],
-         [("Crawl to the door", 3, None), ("Call for help", 4, None)], bed_scene_image],
-
-        [["\\r50 You sink back into bed. \\p1000 The warmth is \\r30 soothing, \\p500 comforting.",
-          "\\r50 But \\r30 the voice in your head \\r50 whispers: \\p500 \\c(255,0,0) 'You have failed.'",
-          "\\r50 Failed your family. \\p500 Failed your father.",
-          "\\r30 \\p1000 You can still hear his voice: \\c(255,255,255) 'Pathetic.'",
-          "The options \\r30 echo in your mind."],
-         [("Get out of bed", 1, None), ("Abandon your family", 5, None)], bed_scene_image],
-
-        [["\\r50 You crawl across the floor, \\p1000 your new legs clacking against the wood.",
-          "\\r30 You feel the weight of your own body, \\p500 \\r50 the grotesque form you’ve become, \\p500 but work, \\r30 work is all that matters.",
-          "But when you reach the door, \\r30 you hear \\p1000 \\c(200,0,0) his footsteps \\p1000 outside.",
-          "\\r50 Your father is pacing \\p500 back and forth.",
-          "\\r30 \\c(255,255,255) What will he do if he sees you?"],
-         [("Open the door", 6, None), ("Hide under the bed", 7, None)], bed_scene_image],
-
-        [["\\r50 You call out, \\p1000 but the words don’t come \\p1000 as words anymore.",
-          "\\r30 Instead, they emerge as \\p500 \\c(255,0,0) clicks, \\p500 hisses.",
-          "\\r50 A language no one understands.",
-          "\\r30 From the other side of the door, \\p500 you hear \\c(255,255,255) your father’s voice \\p1000 low, \\r30 dangerous:",
-          "\\r50 'What \\p500 \\r30 is \\p500 that?'",
-          "\\p1000 You cannot let him see you."],
-         [("Hide", 7, None), ("Try again", 4, None)], bed_scene_image],
-
-        [["\\r50 \\p500 Abandon them? \\p1000 Could you really? \\r30 You could \\p500 walk away now.",
-          "\\r50 Just let them fend for themselves \\r30 and leave this... this nightmare behind.",
-          "\\r50 But where would you go?",
-          "\\r30 And \\p500 would they even care? \\r50 Would \\p500 \\c(255,255,255) he?",
-          "The thought hangs over you, \\r30 like his presence always has."],
-         [("Get out of bed", 1, None), ("Walk out forever", 8, None)], bed_scene_image],
-
-        [["\\r50 You open the door, \\p1000 bracing yourself.",
-          "Your father stands there, \\r30 towering over you, \\p500 his gaze cold and \\r30 disgusted.",
-          "\\r50 You feel \\c(255,255,255) smaller \\p500 than you've ever felt before.",
-          "\\r30 'You’re worthless,' \\p500 his voice cuts through you.",
-          "\\r50 His hand clenches into a fist. \\p1000 What will he do to you now?"],
-         [("Cower", 10, None), ("Stand your ground", 9, None)], bed_scene_image],
-
-        [[
-             "\\r50 You scuttle beneath the bed, \\p1000 as your father's heavy footsteps \\r30 shake the floor above you.",
-             "\\r50 You can hear his breathing, \\p1000 harsh, \\p500 impatient.",
-             "\\r30 Will he find you?",
-             "\\r50 He always finds you."],
-         [("Stay hidden", 11, None), ("Emerge", 12, None)], bed_scene_image],
-
-        [["\\r50 \\p1000 You leave the room, \\p500 not looking back.",
-          "\\r30 It’s easier this way. \\p1000 Isn’t it?",
-          "But \\p1000 \\c(255,0,0) the guilt \\p1000 follows you, \\r30 whispers at the edge of your mind.",
-          "\\r50 What will become of them \\p1000 \\r30 without you?"],
-         [("Keep walking", 13, None), ("Go back", 14, None)], bed_scene_image],
-
-        [["\\r50 You stand your ground \\p1000 despite the fear pulsing through you.",
-          "\\r30 He looks at you \\p1000 like you're \\r50 nothing.",
-          "\\r30 'What have you become?' \\p500 he sneers.",
-          "\\r50 His voice shakes your very being."],
-         [("Collapse", 9, None), ("Leave", 8, None)], bed_scene_image],
-
-        [["\\r50 Your father’s anger \\p1000 is a storm, \\p500 but you cower beneath it.",
-          "\\r30 You’ve been here before, \\p500 in his shadow, \\r30 and you’ll be here again.",
-          "\\r50 But this time, \\p500 you’re \\c(255,0,0) not human \\p1000 anymore."],
-         [("Escape", 8, None), ("Stay", 15, None)], bed_scene_image],
-
-        [["\\r50 You stay perfectly still.",
-          "His breathing \\r30 slows. \\p1000 You hear him walk away, \\p500 but the dread remains.",
-          "\\r50 \\c(255,0,0) He’ll never stop watching you."],
-         [("Get out of bed", 1, None), ("Abandon your family", 5, None)], bed_scene_image],
-
-        [["\\r50 You emerge from the shadows, \\p500 but the room is \\r30 empty.",
-          "\\r50 He’s gone, \\p500 but \\r30 the fear lingers.",
-          "You wonder \\p500 if you'll ever be \\r30 free of him."],
-         [("Leave", 8, None)], bed_scene_image],
-
-        [["\\r50 You walk down the hallway, \\p1000 further and further away.",
-          "\\r30 But the further you go, \\p500 the more you feel \\r30 \\c(255,0,0) lost.",
-          "\\r50 Will you ever truly escape?"],
-         [("End", 0, "end")], bed_scene_image],
-
-        [["\\r50 You turn back.",
-          "The weight of the house \\r30 presses down on you, \\p500 heavier than before.",
-          "You will never leave.",
-          "\\r50 \\c(255,255,255) This is your home now."],
-         [("Get out of bed", 1, None)], bed_scene_image],
-
-        [["\\r50 You stay in the room, \\p1000 shrinking beneath your father’s presence.",
-          "\\r30 You’ve always been nothing \\r50 to him.",
-          "You wonder, \\r30 if you ever \\p500 existed at all."],
-         [("End", 0, "end")], bed_scene_image]
+        [["\\r50 Oh can't I sleep a little longer? \\p1000 I wish I could just forget my job and sleep through this dreary weather.",
+          "\\r50 But I must wake up to make my train, \\p500 after all I can't be late to work \\p500 . \\p500 . \\p500 .",
+          "Oh God, Its 6:00 already! \\p500 Is my alarm clock broken? \\p500 What am I supposed to say to the chief clerk?",
+          "Surely he can't fire me for one slip up, \\p500 can he?",
+          "It matters not, \\p500 if I get out of bed now I can make the 7:00 train if I hurry.",
+          "I might be able to get a less severe punishment if I get out of bed now and rush to work."],
+         [("Get out of bed", 1, "hurt1"), ("Stay in bed", 2, None)], bed_scene_image],
+        # Get out of bed option
+        [["\\r80 \\p1000 My body \\p500 . \\p500 . \\p500 . \\p500 it feels like its been torn apart just from trying to move.",
+          "\\r80 My legs won't obey me, \\p500 my body is too wide.",
+          "\\r50 I won't be able to get out of bed in this state, \\p500 I wish I could just continue to sleep.",
+          "But I can't just lay down, \\p500 I have to get to work.",
+          "These pains throughout my body are no excuse to stay in bed all day, \\p500 my family is probably worried sick."],
+         [("Continue trying", 5, "hurt3"), ("Stay in bed", 3, None)], bed_scene_image],
+        # Stay in bed option
+        [["No, \\p500 I have to get to work, \\p500 even if I have these \\i strange aches \\i all across my body.",
+          ". \\p500 . \\p500 .",
+          "My morning delusions are no excuse to lay in bed all day, \\p500 I better get up.",
+          "I'll miss the 7:00 train if I continue on like this!",
+          "I can't stay in bed, I \\i have \\i to get to work. \\p500 My family is probably worried sick."],
+         [("Get out of bed", 1, "hurt"), ("Stay in bed", 3, None)], bed_scene_image],
+        # Continue stay in bed option
+        [[". \\p500 . \\p500 .",
+          "\\i \\c(100,100,200) \\o \"Gregor dear, \\p500 aren't you late to work? \\p500 You \\i need \\i to get out of bed!\"",
+          "Oh! \\p500 My sweet mother, \\p500 always so kind and caring.",
+          "\\i \"Yes mother, \\p500 I'm getting up right now.\"",
+          ". \\p500 . \\p500 .",
+          "\\i \\c(200,40,40) \\o \"Gregor! \\p500 Gregor! \\p500 Whats the matter with you?\"",
+          "\\i \\c(200,200,30) \\o \"Gregor, are you hurt? \\p500 Do you need help?\"",
+          "My entire family is worried, \\p500 they must be wondering what will happen if I lose my job \\p500 . \\p500 . \\p500 . \\p500 I don't even want to think about it.",
+          "They probably would've come in to check on me by now and seen my condition if I hadn't left my door locked!",
+          "I really have to get up now, \\p500 or my family will be disappointed.",
+          "Oh god, \\p500 what do I do?"],
+         [("Get out of bed", 10, "doorbellhurt"), ("Stay in bed", 4, "doorbell")], bed_scene_image],
+        # Abandon family option
+        [["Oh no, \\p500 the company must have sent someone to check on me!",
+          "Please don't let them come in here to see me in this state!",
+          "\\c(150,150,150) \\i \\o \"Where's Gregor?\"",
+          "Wait, \\p500 that can't be, \\p500 the chief clerk himself came to see why I haven't come to work!",
+          "Does the company think all their workers are just scoundrels?",
+          "Do they not trust us even one bit?",
+          "It doesn't matter, I have to calm the chief clerk if I want to keep my job.",
+          "What will become of me if I am fired? \\p500 What would happen to my family?",
+          "My family, \\p500 the company, \\p500 everyone is depending on me. \\p500 \\r50 I can't lose my job, \\p500 I simply \\i can't."],
+         [("Talk to the chief clerk", 9, None), ("Abandon your family", 9, None)], bed_scene_image],
+        # Continue trying option
+        [["\\r80 I think I am making progress \\p500 . \\p500 . \\p500 . \\p500 but my body feels like its falling apart.",
+          "I'll have to hurry to make even the 8:00 train once I manage to get out.",
+          "\\i \\c(100,100,200) \\o \"Gregor dear, \\p500 aren't you late to work? \\p500 You \\i need \\i to get out of bed!\"",
+          "Oh! \\p500 My sweet mother, \\p500 always so kind and caring.",
+          "\\i \"Yes mother, \\p500 I'm getting up right now.\"",
+          ". \\p500 . \\p500 .",
+          "\\i \\c(200,40,40) \\o \"Gregor! \\p500 Gregor! \\p500 Whats the matter with you?\"",
+          "\\i \\c(200,200,30) \\o \"Gregor, are you hurt? \\p500 Do you need help?\"",
+          "My entire family is asking for me, I'd better hurry out and assure to them that I'm okay."],
+         [("Make a final push", 6, "fall"), ("Stay in bed", 4, "doorbell")], bed_scene_image],
+        # Final push to get out of bed option
+        [["Oh no, \\p500 that must be someone from the office here to check on me.",
+          "I don't have time to worry about the damage to my strange body, \\p500 I better greet them if I want to keep my job.",
+          "\\c(150,150,150) \\i \\o \"Where's Gregor?\"",
+          "Wait, \\p500 that can't be, \\p500 the chief clerk himself came to see why I haven't come to work!",
+          "Does the company think all their workers are just scoundrels?",
+          "Do they not trust us even one bit?",
+          "It doesn't matter, I've already gotten this far, I better open the door.",
+          "What will become of me if I am fired? \\p500 What would happen to my family?",
+          "My family, \\p500 the company, \\p500 everyone is depending on me. \\p500 \\r50 I can't lose my job, \\p500 I simply \\i can't."],
+         [("Open the door", 7, None), ("Cower", 8, None)], door_scene_image],
+        # Open the door option
+        [["I have to go grab the key.",
+          "My arms won't exactly do to pick it up, \\p500 I'll have to use the pincers that are where my mouth used to be.",
+          "\\i \\c(100,100,200) \\o \"Look! \\p500 Look! \\p500 He's opening the door!\"",
+          "It feels like the key is contorting my pincers, but I have to open this door.",
+          "\\i \\r50 \"Chief clerk sir, \\p500 I'll head straight to the office.\"",
+          "\\i \\r50 \"I'll make sure to never be late again.\"",
+          "\\c(150,150,150) \\i \\o \"Wh- \\p500 Whats \\i that? \\i \\p500 And \\r80 why is it making clicking noises?\"",
+          "\\i \\c(100,100,200) \\o \"That's not Gregor! \\p500 What did it do to our Gregor?\"",
+          "\\c(150,150,150) \\i \\o \"I have to go tell the company!\"",
+          "\\i \\c(200,40,40) \\o \"Get back in the room! \\p500 Do you realize what you've done to us?\"",
+          "I couldn't even convince the chief clerk to let me keep my job.",
+          "My family was depending on me, \\p500 and I failed.",
+          "I'm useless.",
+          "Completely useless to my family now.",
+          "\\r80 There is no point anymore.",
+          "End"],
+         [("End", 0, None)], door_scene_image],
+        # Cower option
+        [["I- \\p500 I can't face the chief clerk.",
+          "\\r50 He'll just fire me, \\p500 and I'll be useless.",
+          "\\c(150,150,150) \\i \\o \"Gregor! \\p500 Gregor! \\p500 I know your in there!\"",
+          "\\i \\c(200,40,40) \\o \"Gregor! \\p500 You need to come out!\"",
+          "Well, \\p500 I guess I already am useless, \\p500 hiding behind this door.",
+          "\\r80 There is no point anymore.",
+          "End"],
+         [("End", 0, None)], door_scene_image],
+        # Talk to chief clerk option
+        [["\\i \"Chief clerk sir, \\p500 I'm sorry I missed the early train today.\"",
+          "\\i \"I'll make sure it never happens again, \\p500 and I'll head into work straight away.\"",
+          "\\i \"Would you tell me, \\p500 will you be letting me go?\"",
+          "\\p500 . \\p500 . \\p500 .",
+          "\\c(150,150,150) \\i \\o \"What are those clicking noises? \\p500 Is Gregor trying to make a mockery of us?\"",
+          "\\i \\c(100,100,200) \\o \"He must not be well!\"",
+          "I can't even communicate with them anymore it seems.",
+          "Not that it matters anyway, \\p500 I've just stayed in bed all morning, \\p500 not even trying to get out and keep my job.",
+          "I'm useless",
+          "\\r80 There is no point anymore.",
+          "End"],
+         [("End", 0, None)], bed_scene_image],
+        # Get out of bed late option
+        [["It feels like my bodies been torn apart from trying to move, \\p500 and to make things worse, \\p500 there's someone at the door.",
+          "It must be someone from the office coming to check on why I haven't come to work.",
+          "My body is too wide and abnormal to get out of bed right now, \\p500 I'll have to talk them from my bed.",
+          "\\c(150,150,150) \\i \\o \"Where's Gregor?\"",
+          "Wait, \\p500 that can't be, \\p500 the chief clerk himself came to see why I haven't come to work!",
+          "Does the company think all their workers are just scoundrels?",
+          "Do they not trust us even one bit?",
+          "It doesn't matter, I have to calm the chief clerk if I want to keep my job.",
+          "What will become of me if I am fired? \\p500 What would happen to my family?",
+          "My family, \\p500 the company, \\p500 everyone is depending on me. \\p500 \\r50 I can't lose my job, \\p500 I simply \\i can't."],
+         [("Talk to the chief clerk", 9, None), ("Abandon your family", 9, None)], bed_scene_image]
     ]
 
     option_1.set_text(scenes[0][1][0][0])
@@ -304,6 +283,120 @@ def main():
                 if cutscene_time > 8:
                     pygame.quit()
                     sys.exit()
+            elif current_cutscene == "glitch":
+                current_scene.load(screen)
+                if not glitch_played:
+                    glitch_sound.play()
+                    glitch_played = True
+
+                if cutscene_time < 0.35:
+                    screen.blit(glitch_overlay, overlay_location)
+                else:
+                    current_cutscene = None
+                    cutscene_start_time = None
+                    glitch_played = False
+            elif current_cutscene[:4] == "hurt":
+                if not set_hurt_times:
+                    hurt_times = int(current_cutscene[4:])
+                    set_hurt_times = True
+                current_scene.load(screen)
+                screen.blit(hurt_overlay, overlay_location)
+                if not hurt_played:
+                    hurt_sound.play()
+                    hurt_played = True
+                if cutscene_time < 0.6:
+                    hurt_overlay.set_alpha((0.6 - cutscene_time) * 400)
+                else:
+                    if hurt_times == 1:
+                        current_cutscene = None
+                        cutscene_start_time = None
+                        hurt_overlay.set_alpha(255)
+                        hurt_played = False
+                        set_hurt_times = False
+                    else:
+                        cutscene_start_time = current_time
+                        hurt_played = False
+                        hurt_times -= 1
+            elif current_cutscene == "doorbell":
+                if not set_text:
+                    cutscene_text_box.set_text(". \\p500 . \\p500 . \\p500")
+                    set_text = True
+
+                screen.blit(bed_scene_image, overlay_location)
+                cutscene_text_box.load(screen)
+
+                if not cutscene_text_box.is_done():
+                    cutscene_text_box.move(delta_time)
+                if 4 < cutscene_time < 7:
+                    if not door_bell_played:
+                        door_bell_sound.play()
+                        door_bell_played = True
+                elif cutscene_time > 7:
+                    current_cutscene = None
+                    cutscene_start_time = None
+                    door_bell_played = False
+                    set_text = False
+            elif current_cutscene == "fall":
+                if cutscene_time < 2:
+                    screen.fill(black)
+                    if not fall_sound_played:
+                        fall_sound.play()
+                        fall_sound_played = True
+                elif cutscene_time < 5:
+                    if not set_text:
+                        cutscene_text_box.set_text("\\r80 I have to get to the door.")
+                        set_text = True
+                    cutscene_text_box.load(screen)
+                    cutscene_text_box.move(delta_time)
+                elif cutscene_time < 8:
+                    if not scurry_sound_played:
+                        scurry_sound.play()
+                        scurry_sound_played = True
+                elif cutscene_time < 12:
+                    brightness_screen.set_alpha((12 - cutscene_time) * 25 + 155)
+                    screen.blit(door_scene_image, overlay_location)
+                    screen.blit(brightness_screen, (0, 0))
+                elif cutscene_time < 14:
+                    if not door_bell_played:
+                        door_bell_sound.play()
+                        door_scene_image.blit(brightness_screen, (0, 0))
+                        door_bell_played = True
+                else:
+                    current_cutscene = None
+                    cutscene_start_time = None
+                    scurry_sound_played = False
+                    fall_sound_played = False
+                    door_bell_played = False
+                    set_text = False
+            elif current_cutscene == "opendoor":
+                screen.fill(black)
+                if cutscene_time > 10:
+                    current_cutscene = None
+                    cutscene_start_time = None
+            elif current_cutscene == "closedoor":
+                brightness_screen.set_alpha(255 - (cutscene_time * 63))
+                screen.blit(door_scene_image, (0, 0))
+                screen.blit(brightness_screen, (0, 0))
+                if cutscene_time > 4:
+                    current_cutscene = None
+                    cutscene_start_time = None
+            elif current_cutscene == "doorbellhurt":
+                current_scene.load(screen)
+                if not hurt_played:
+                    hurt_sound.play()
+                    hurt_played = True
+                if cutscene_time < 0.6:
+                    hurt_overlay.set_alpha((0.6 - cutscene_time) * 400)
+                    screen.blit(hurt_overlay, overlay_location)
+                elif cutscene_time < 4:
+                    if not door_bell_played:
+                        door_bell_sound.play()
+                        door_bell_played = True
+                else:
+                    current_cutscene = None
+                    cutscene_start_time = None
+                    door_bell_played = False
+                    hurt_played = False
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -316,13 +409,38 @@ def main():
         current_scene.load(screen)
         current_scene.move(delta_time)
 
-        for i in range(len(current_scene.options)):
-            if current_scene.get_chosen_option() == current_scene.options[i]:
-                chosen_option_parameters = scenes[scene_num][1][i]
-                set_scene(current_scene, scenes[chosen_option_parameters[1]], options)
-                current_cutscene = chosen_option_parameters[2]
-                scene_num = chosen_option_parameters[1]
-                break
+        # Special cases
+        if (scene_num == 4 and current_scene.get_chosen_option() == option_2 or scene_num == 10 and current_scene.get_chosen_option() == option_2) and not glitched:
+            option_2.set_text("Talk to the chief clerk")
+            current_scene.chosen_option = None
+            current_cutscene = "glitch"
+            glitched = True
+        elif scene_num == 7 and current_scene.current_text == 4 and not door_open_played:
+            dark_screen = pygame.Surface(screen_size)
+            current_scene.background_img = dark_screen
+            current_cutscene = "opendoor"
+            door_open_sound.play()
+            door_open_played = True
+        elif scene_num == 7 and current_scene.current_text == 10 and not door_slam_played:
+            current_cutscene = "closedoor"
+            current_scene.background_img = door_scene_image
+            door_slam_sound.play()
+            door_slam_played = True
+        elif scene_num == 7 and current_scene.current_text == 15:
+            current_cutscene = "end"
+        elif scene_num == 8 and current_scene.current_text == 6:
+            current_cutscene = "end"
+        elif scene_num == 9 and current_scene.current_text == 10:
+            current_cutscene = "end"
+
+        if current_scene.at_decision():
+            for i in range(len(current_scene.options)):
+                if current_scene.get_chosen_option() == current_scene.options[i]:
+                    chosen_option_parameters = scenes[scene_num][1][i]
+                    set_scene(current_scene, scenes[chosen_option_parameters[1]], options)
+                    current_cutscene = chosen_option_parameters[2]
+                    scene_num = chosen_option_parameters[1]
+                    break
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
